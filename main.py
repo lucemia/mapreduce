@@ -25,85 +25,76 @@ This module should be specified as a handler for mapreduce URLs in app.yaml:
 """
 
 
+import webapp2
 
-import wsgiref.handlers
-
-from google.appengine.ext import webapp
 from mapreduce import handlers
 from mapreduce import status
-from google.appengine.ext.webapp import util
 
 try:
-  from mapreduce.lib import pipeline
+    from mapreduce.lib import pipeline
 except ImportError:
-  pipeline = None
+    pipeline = None
 
 
 STATIC_RE = r".*/([^/]*\.(?:css|js)|status|detail)$"
 
 
-class RedirectHandler(webapp.RequestHandler):
-  """Redirects the user back to the status page."""
+class RedirectHandler(webapp2.RequestHandler):
+    """Redirects the user back to the status page."""
 
-  def get(self):
-    new_path = self.request.path
-    if not new_path.endswith("/"):
-      new_path += "/"
-    new_path += "status"
-    self.redirect(new_path)
+    def get(self):
+        new_path = self.request.path
+        if not new_path.endswith("/"):
+            new_path += "/"
+        new_path += "status"
+        self.redirect(new_path)
 
 
 def create_handlers_map():
-  """Create new handlers map.
+    """Create new handlers map.
 
-  Returns:
+    Returns:
     list of (regexp, handler) pairs for WSGIApplication constructor.
-  """
-  pipeline_handlers_map = []
+    """
+    pipeline_handlers_map = []
 
-  if pipeline:
-    pipeline_handlers_map = pipeline.create_handlers_map(prefix=".*/pipeline")
+    if pipeline:
+        pipeline_handlers_map = pipeline.create_handlers_map(prefix=".*/pipeline")
 
-  return pipeline_handlers_map + [
-      # Task queue handlers.
-      (r".*/worker_callback", handlers.MapperWorkerCallbackHandler),
-      (r".*/controller_callback", handlers.ControllerCallbackHandler),
-      (r".*/kickoffjob_callback", handlers.KickOffJobHandler),
-      (r".*/finalizejob_callback", handlers.FinalizeJobHandler),
+    return pipeline_handlers_map + [
+        # Task queue handlers.
+        (r".*/worker_callback", handlers.MapperWorkerCallbackHandler),
+        (r".*/controller_callback", handlers.ControllerCallbackHandler),
+        (r".*/kickoffjob_callback", handlers.KickOffJobHandler),
+        (r".*/finalizejob_callback", handlers.FinalizeJobHandler),
 
-      # RPC requests with JSON responses
-      # All JSON handlers should have /command/ prefix.
-      (r".*/command/start_job", handlers.StartJobHandler),
-      (r".*/command/cleanup_job", handlers.CleanUpJobHandler),
-      (r".*/command/abort_job", handlers.AbortJobHandler),
-      (r".*/command/list_configs", status.ListConfigsHandler),
-      (r".*/command/list_jobs", status.ListJobsHandler),
-      (r".*/command/get_job_detail", status.GetJobDetailHandler),
+        # RPC requests with JSON responses
+        # All JSON handlers should have /command/ prefix.
+        (r".*/command/start_job", handlers.StartJobHandler),
+        (r".*/command/cleanup_job", handlers.CleanUpJobHandler),
+        (r".*/command/abort_job", handlers.AbortJobHandler),
+        (r".*/command/list_configs", status.ListConfigsHandler),
+        (r".*/command/list_jobs", status.ListJobsHandler),
+        (r".*/command/get_job_detail", status.GetJobDetailHandler),
 
-      # UI static files
-      (STATIC_RE, status.ResourceHandler),
+        # UI static files
+        (STATIC_RE, status.ResourceHandler),
 
-      # Redirect non-file URLs that do not end in status/detail to status page.
-      (r".*", RedirectHandler),
-      ]
+        # Redirect non-file URLs that do not end in status/detail to status page.
+        (r".*", RedirectHandler),
+    ]
 
 def create_application():
-  """Create new WSGIApplication and register all handlers.
+    """Create new WSGIApplication and register all handlers.
 
-  Returns:
+    Returns:
     an instance of webapp.WSGIApplication with all mapreduce handlers
     registered.
-  """
-  return webapp.WSGIApplication(create_handlers_map(),
-                                debug=True)
+    """
+    return webapp2.WSGIApplication(
+        create_handlers_map(),
+        debug=True
+    )
 
 
 APP = create_application()
-
-
-def main():
-  util.run_wsgi_app(APP)
-
-
-if __name__ == "__main__":
-  main()
