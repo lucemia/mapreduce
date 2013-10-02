@@ -1,4 +1,0 @@
-mapreduce
-=========
-
-mapreduce reference point
