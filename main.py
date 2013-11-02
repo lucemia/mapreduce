@@ -35,8 +35,7 @@ except ImportError:
   pipeline = None
 
 # pylint: disable=g-import-not-at-top
-import webapp2
-# from google.appengine.ext import webapp
+from google.appengine.ext import webapp
 from mapreduce import handlers
 from mapreduce import status
 from google.appengine.ext.webapp import util
@@ -45,7 +44,7 @@ from google.appengine.ext.webapp import util
 STATIC_RE = r".*/([^/]*\.(?:css|js)|status|detail)$"
 
 
-class RedirectHandler(webapp2.RequestHandler):
+class RedirectHandler(webapp.RequestHandler):
   """Redirects the user back to the status page."""
 
   def get(self):
@@ -69,10 +68,12 @@ def create_handlers_map():
 
   return pipeline_handlers_map + [
       # Task queue handlers.
-      (r".*/worker_callback", handlers.MapperWorkerCallbackHandler),
-      (r".*/controller_callback", handlers.ControllerCallbackHandler),
-      (r".*/kickoffjob_callback", handlers.KickOffJobHandler),
-      (r".*/finalizejob_callback", handlers.FinalizeJobHandler),
+      # Always suffix by mapreduce_id or shard_id for log analysis purposes.
+      # mapreduce_id or shard_id also presents in headers or payload.
+      (r".*/worker_callback/.*", handlers.MapperWorkerCallbackHandler),
+      (r".*/controller_callback/.*", handlers.ControllerCallbackHandler),
+      (r".*/kickoffjob_callback/.*", handlers.KickOffJobHandler),
+      (r".*/finalizejob_callback/.*", handlers.FinalizeJobHandler),
 
       # RPC requests with JSON responses
       # All JSON handlers should have /command/ prefix.
@@ -97,16 +98,16 @@ def create_application():
     an instance of webapp.WSGIApplication with all mapreduce handlers
     registered.
   """
-  return webapp2.WSGIApplication(create_handlers_map(),
+  return webapp.WSGIApplication(create_handlers_map(),
                                 debug=True)
 
 
 APP = create_application()
 
 
-# def main():
-#   util.run_wsgi_app(APP)
+def main():
+  util.run_wsgi_app(APP)
 
 
-# if __name__ == "__main__":
-#   main()
+if __name__ == "__main__":
+  main()
