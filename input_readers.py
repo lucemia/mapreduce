@@ -784,6 +784,7 @@ class DatastoreInputReader(AbstractDatastoreInputReader):
     if not filters:
       return
 
+    return
     properties = model_class._properties
 
     for f in filters:
